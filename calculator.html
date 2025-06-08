@@ -159,18 +159,30 @@
             const multiplier = installments[period];
             const remaining = price - down;
             const remainingPercent = ((remaining / price) * 100).toFixed(2);
-            // Extract weeks
-            let weeks = 0;
+            let periodType = '';
+            let periodCount = 0;
+            let payPerPeriod = 0;
             if (/^(\d+) weeks$/.test(period)) {
-                weeks = parseInt(period);
+                periodType = 'week';
+                periodCount = parseInt(period);
+                payPerPeriod = (remaining * multiplier / periodCount).toFixed(2);
             } else if (/^(\d+) month$/.test(period)) {
-                weeks = parseInt(period) * 4;
+                periodType = 'month';
+                periodCount = parseInt(period);
+                payPerPeriod = (remaining * multiplier / periodCount).toFixed(2);
+            } else if (/^(\d+) year$/.test(period)) {
+                periodType = 'year';
+                periodCount = parseInt(period);
+                payPerPeriod = (remaining * multiplier / periodCount).toFixed(2);
             } else {
-                weeks = 12; // default
+                // 默认按周
+                periodType = 'week';
+                periodCount = 12;
+                payPerPeriod = (remaining * multiplier / periodCount).toFixed(2);
             }
-            const totalPay = remaining * multiplier;
-            const weeklyPay = (totalPay / weeks).toFixed(2);
-            resultDiv.innerHTML = `Down payment ratio <strong>${((down/price)*100).toFixed(2)}%</strong>, remaining <strong>${remainingPercent}%</strong> (${remaining.toFixed(2)})<br>Installment period: <strong>${period}</strong>, weekly payment <strong>${weeklyPay}</strong>, total <strong>${weeks}</strong> weeks`;
+            let periodLabel = periodType === 'week' ? '每周还款' : (periodType === 'month' ? '每月还款' : '每年还款');
+            let periodLabelEn = periodType === 'week' ? 'weekly payment' : (periodType === 'month' ? 'monthly payment' : 'yearly payment');
+            resultDiv.innerHTML = `Down payment ratio <strong>${((down/price)*100).toFixed(2)}%</strong>, remaining <strong>${remainingPercent}%</strong> (${remaining.toFixed(2)})<br>Installment period: <strong>${period}</strong>, ${periodLabelEn} <strong>${payPerPeriod}</strong>, total <strong>${periodCount}</strong> ${periodType}${periodCount>1?'s':''}`;
         }
 
         // Listen for changes in localStorage
