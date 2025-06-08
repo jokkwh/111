@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installment Calculator</title>
+    <style>
+        body {
+            font-family: 'Arial', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #fafbfc;
+        }
+        .container {
+            max-width: 420px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #eee;
+            padding: 32px 28px 24px 28px;
+        }
+        h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 32px;
+            letter-spacing: 2px;
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 6px;
+            display: block;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            margin-top: 4px;
+            box-sizing: border-box;
+        }
+        .period-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .period-btn {
+            border: 1.5px solid #e57373;
+            background: #fff;
+            color: #e57373;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: all 0.2s;
+        }
+        .period-btn.selected, .period-btn:hover {
+            background: #ffeaea;
+            color: #b71c1c;
+            border-color: #b71c1c;
+        }
+        .result {
+            margin-top: 28px;
+            font-size: 1.15rem;
+            color: #222;
+        }
+        .result strong {
+            color: #b71c1c;
+            font-size: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Installment Calculator</h2>
+        <div class="form-group">
+            <label for="price">Product Price <span style="color:#b71c1c">*</span></label>
+            <input type="number" id="price" placeholder="Enter product price" min="0">
+        </div>
+        <div class="form-group">
+            <label for="downPayment">Custom Down Payment <span style="color:#b71c1c">*</span></label>
+            <input type="number" id="downPayment" placeholder="Enter down payment" min="0">
+        </div>
+        <div class="form-group">
+            <label>Installment Period <span style="color:#b71c1c">*</span></label>
+            <div class="period-group" id="periodGroup">
+                <!-- Period buttons will be generated here -->
+            </div>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        // Get installment multipliers from localStorage or use defaults
+        function getInstallments() {
+            const local = localStorage.getItem('installments_calculator3');
+            if (local) return JSON.parse(local);
+            // Default configuration
+            return {
+                "6 weeks": 1.4,
+                "8 weeks": 1.5,
+                "12 weeks": 1.735,
+                "16 weeks": 1.95,
+                "1 month": 1.36
+            };
+        }
+        let installments = getInstallments();
+        let selectedPeriod = Object.keys(installments)[0];
+
+        // Render period buttons
+        function renderPeriods() {
+            const group = document.getElementById('periodGroup');
+            group.innerHTML = '';
+            Object.keys(installments).forEach(period => {
+                const btn = document.createElement('button');
+                btn.className = 'period-btn' + (period === selectedPeriod ? ' selected' : '');
+                btn.innerHTML = `<b>B</b> ${period}`;
+                btn.onclick = () => {
+                    selectedPeriod = period;
+                    renderPeriods();
+                    calculate();
+                };
+                group.appendChild(btn);
+            });
+        }
+
+        // Calculation logic
+        function calculate() {
+            const price = parseFloat(document.getElementById('price').value);
+            const down = parseFloat(document.getElementById('downPayment').value);
+            const resultDiv = document.getElementById('result');
+            if (isNaN(price) || price <= 0) {
+                resultDiv.innerHTML = 'Please enter the product price.';
+                return;
+            }
+            if (isNaN(down) || down < 0 || down > price) {
+                resultDiv.innerHTML = 'Please enter a valid down payment.';
+                return;
+            }
+            const period = selectedPeriod;
+            const multiplier = installments[period];
+            const remaining = price - down;
+            const remainingPercent = ((remaining / price) * 100).toFixed(2);
+            // Extract weeks
+            let weeks = 0;
+            if (/^(\d+) weeks$/.test(period)) {
+                weeks = parseInt(period);
+            } else if (/^(\d+) month$/.test(period)) {
+                weeks = parseInt(period) * 4;
+            } else {
+                weeks = 12; // default
+            }
+            const totalPay = remaining * multiplier;
+            const weeklyPay = (totalPay / weeks).toFixed(2);
+            resultDiv.innerHTML = `Down payment ratio <strong>${((down/price)*100).toFixed(2)}%</strong>, remaining <strong>${remainingPercent}%</strong> (${remaining.toFixed(2)})<br>Installment period: <strong>${period}</strong>, weekly payment <strong>${weeklyPay}</strong>, total <strong>${weeks}</strong> weeks`;
+        }
+
+        // Listen for changes in localStorage
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'installments_calculator3') {
+                installments = JSON.parse(e.newValue);
+                renderPeriods();
+                calculate();
+            }
+        });
+
+        document.getElementById('price').oninput = calculate;
+        document.getElementById('downPayment').oninput = calculate;
+        renderPeriods();
+        calculate();
+    </script>
+</body>
+</html> 
