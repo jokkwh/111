@@ -91,7 +91,23 @@
             </div>
         </div>
         <div class="result" id="result"></div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="showImportDialog()" style="padding: 10px 20px; background: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer;">导入分享链接</button>
+        </div>
     </div>
+
+    <!-- 导入对话框 -->
+    <div id="importDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 400px;">
+            <h3 style="margin-top: 0;">导入分享链接</h3>
+            <input type="text" id="importLink" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" placeholder="粘贴分享链接">
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="importShareLink()" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">导入</button>
+                <button onclick="closeImportDialog()" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Get installment multipliers from localStorage or use defaults
         function getInstallments() {
@@ -170,6 +186,68 @@
         document.getElementById('downPayment').oninput = calculate;
         renderPeriods();
         calculate();
+
+        // 显示导入对话框
+        function showImportDialog() {
+            document.getElementById('importDialog').style.display = 'block';
+        }
+
+        // 关闭导入对话框
+        function closeImportDialog() {
+            document.getElementById('importDialog').style.display = 'none';
+        }
+
+        // 导入分享链接
+        function importShareLink() {
+            const importLink = document.getElementById('importLink').value;
+            try {
+                const url = new URL(importLink);
+                const settings = url.searchParams.get('settings');
+                if (!settings) {
+                    throw new Error('无效的分享链接');
+                }
+
+                const allSettings = JSON.parse(atob(settings));
+                
+                // 验证导入的数据格式
+                if (!allSettings.installments_calculator || !allSettings.installments_calculator2 || !allSettings.installments_calculator3) {
+                    throw new Error('导入的数据格式不正确');
+                }
+
+                // 保存所有设置
+                localStorage.setItem('installments_calculator', JSON.stringify(allSettings.installments_calculator));
+                localStorage.setItem('installments_calculator2', JSON.stringify(allSettings.installments_calculator2));
+                localStorage.setItem('installments_calculator3', JSON.stringify(allSettings.installments_calculator3));
+
+                alert('设置已成功导入！');
+                closeImportDialog();
+                // 刷新页面以应用新设置
+                window.location.reload();
+            } catch (error) {
+                alert('导入失败：' + error.message);
+            }
+        }
+
+        // 检查URL中是否包含设置参数
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const settings = urlParams.get('settings');
+            if (settings) {
+                try {
+                    const allSettings = JSON.parse(atob(settings));
+                    if (allSettings.installments_calculator && allSettings.installments_calculator2 && allSettings.installments_calculator3) {
+                        localStorage.setItem('installments_calculator', JSON.stringify(allSettings.installments_calculator));
+                        localStorage.setItem('installments_calculator2', JSON.stringify(allSettings.installments_calculator2));
+                        localStorage.setItem('installments_calculator3', JSON.stringify(allSettings.installments_calculator3));
+                        alert('设置已成功导入！');
+                        // 刷新页面以应用新设置
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    console.error('导入设置失败：', error);
+                }
+            }
+        };
     </script>
 </body>
 </html> 
